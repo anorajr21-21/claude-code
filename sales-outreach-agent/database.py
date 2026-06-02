@@ -13,19 +13,20 @@ def init_db():
     with get_conn() as conn:
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS leads (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                place_id    TEXT UNIQUE,
-                name        TEXT NOT NULL,
-                address     TEXT,
-                phone       TEXT,
-                category    TEXT,
-                rating      REAL,
-                website     TEXT,
-                city        TEXT,
-                stage       TEXT DEFAULT 'new',
-                notes       TEXT,
-                created_at  TEXT DEFAULT (datetime('now')),
-                updated_at  TEXT DEFAULT (datetime('now'))
+                id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                place_id          TEXT UNIQUE,
+                name              TEXT NOT NULL,
+                address           TEXT,
+                phone             TEXT,
+                telegram_handle   TEXT,
+                category          TEXT,
+                rating            REAL,
+                website           TEXT,
+                city              TEXT,
+                stage             TEXT DEFAULT 'new',
+                notes             TEXT,
+                created_at        TEXT DEFAULT (datetime('now')),
+                updated_at        TEXT DEFAULT (datetime('now'))
             );
 
             CREATE TABLE IF NOT EXISTS outreach_log (
@@ -64,8 +65,8 @@ def upsert_lead(data: dict) -> int:
         if existing:
             return existing["id"]
         cur = conn.execute(
-            """INSERT INTO leads (place_id, name, address, phone, category, rating, website, city)
-               VALUES (:place_id, :name, :address, :phone, :category, :rating, :website, :city)""",
+            """INSERT INTO leads (place_id, name, address, phone, telegram_handle, category, rating, website, city)
+               VALUES (:place_id, :name, :address, :phone, :telegram_handle, :category, :rating, :website, :city)""",
             data,
         )
         return cur.lastrowid

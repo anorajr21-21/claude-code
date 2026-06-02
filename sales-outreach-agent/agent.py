@@ -183,10 +183,16 @@ def execute_tool(name: str, inputs: dict) -> str:
             details = get_place_details(inputs["place_id"])
             with database.get_conn() as conn:
                 conn.execute(
-                    "UPDATE leads SET phone=?, website=?, updated_at=datetime('now') WHERE id=?",
-                    (details.get("phone"), details.get("website"), inputs["lead_id"]),
+                    "UPDATE leads SET phone=?, website=?, telegram_handle=?, updated_at=datetime('now') WHERE id=?",
+                    (details.get("phone"), details.get("website"), details.get("telegram_handle"), inputs["lead_id"]),
                 )
-            return json.dumps({"lead_id": inputs["lead_id"], **details})
+            tg = details.get("telegram_handle")
+            return json.dumps({
+                "lead_id": inputs["lead_id"],
+                "telegram_handle": tg,
+                "has_telegram": bool(tg),
+                **details,
+            })
 
         elif name == "send_outreach":
             lead_id = inputs["lead_id"]

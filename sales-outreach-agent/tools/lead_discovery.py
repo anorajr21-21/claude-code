@@ -79,7 +79,11 @@ def get_place_details(place_id: str) -> dict:
     if not items:
         return {}
     item = items[0]
-    return {"phone": _extract_phone(item), "website": _extract_website(item)}
+    return {
+        "phone": _extract_phone(item),
+        "website": _extract_website(item),
+        "telegram_handle": _extract_telegram(item),
+    }
 
 
 def _extract_phone(item: dict) -> Optional[str]:
@@ -98,13 +102,28 @@ def _extract_website(item: dict) -> Optional[str]:
     return None
 
 
+def _extract_telegram(item: dict) -> Optional[str]:
+    for group in item.get("contact_groups", []):
+        for contact in group.get("contacts", []):
+            ctype = contact.get("type", "")
+            value = contact.get("value", "")
+            if ctype == "telegram":
+                return value.lstrip("@")
+            # Some businesses list Telegram as a URL
+            if "t.me/" in value:
+                handle = value.split("t.me/")[-1].strip("/")
+                if handle:
+                    return handle
+    return None
+
+
 def _normalize(item: dict, city: str, category: str) -> dict:
-    # 2GIS returns the human-readable address as top-level "address_name"
     return {
         "place_id": item.get("id"),
         "name": item.get("name"),
         "address": item.get("address_name"),
         "phone": _extract_phone(item),
+        "telegram_handle": _extract_telegram(item),
         "category": category,
         "rating": None,
         "website": _extract_website(item),

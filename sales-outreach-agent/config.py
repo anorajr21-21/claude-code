@@ -13,6 +13,8 @@ TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
 TWILIO_WHATSAPP_FROM = os.environ.get("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+# Your own Telegram chat ID — drafts for businesses without a Telegram handle are sent here
+OWNER_TELEGRAM_CHAT_ID = os.environ.get("OWNER_TELEGRAM_CHAT_ID", "")
 
 SENDER_NAME = os.environ.get("SENDER_NAME", "Sales Team")
 SENDER_COMPANY = os.environ.get("SENDER_COMPANY", "Too Good To Go Partner Team")
