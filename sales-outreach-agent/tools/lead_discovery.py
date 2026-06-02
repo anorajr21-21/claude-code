@@ -47,7 +47,7 @@ def search_businesses(city: str, category: str = "beauty_salon", radius_m: int =
                 "radius": radius_m,
                 "key": TWOGIS_API_KEY,
                 "fields": "items.name,items.address,items.contact_groups",
-                "page_size": min(max_results - len(results), 20),
+                "page_size": min(max_results - len(results), 10),
                 "type": "branch",
             },
             timeout=15,
