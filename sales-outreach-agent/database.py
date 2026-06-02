@@ -1,6 +1,5 @@
 import sqlite3
-import json
-from datetime import datetime
+from typing import Optional
 from config import DB_PATH
 
 
@@ -80,7 +79,7 @@ def update_lead_stage(lead_id: int, stage: str, notes: str = None):
         )
 
 
-def get_lead(lead_id: int) -> dict | None:
+def get_lead(lead_id: int) -> Optional[dict]:
     with get_conn() as conn:
         row = conn.execute("SELECT * FROM leads WHERE id=?", (lead_id,)).fetchone()
         return dict(row) if row else None

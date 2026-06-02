@@ -1,4 +1,5 @@
 import httpx
+from typing import Optional
 from config import TWOGIS_API_KEY
 
 BASE_URL = "https://catalog.api.2gis.com/3.0/items"
@@ -75,7 +76,7 @@ def get_place_details(place_id: str) -> dict:
     return {"phone": phone, "website": _extract_website(item)}
 
 
-def _extract_phone(item: dict) -> str | None:
+def _extract_phone(item: dict) -> Optional[str]:
     for group in item.get("contact_groups", []):
         for contact in group.get("contacts", []):
             if contact.get("type") == "phone":
@@ -83,7 +84,7 @@ def _extract_phone(item: dict) -> str | None:
     return None
 
 
-def _extract_website(item: dict) -> str | None:
+def _extract_website(item: dict) -> Optional[str]:
     for group in item.get("contact_groups", []):
         for contact in group.get("contacts", []):
             if contact.get("type") in ("website", "url"):
