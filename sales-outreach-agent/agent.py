@@ -163,10 +163,16 @@ def execute_tool(name: str, inputs: dict) -> str:
         if name == "search_leads":
             results = search_businesses(
                 city=inputs["city"],
-                category=inputs.get("category", "restaurant"),
+                category=inputs.get("category", "beauty_salon"),
                 radius_m=inputs.get("radius_m", 5000),
                 max_results=inputs.get("max_results", 20),
             )
+            if not results:
+                return json.dumps({
+                    "found": 0,
+                    "leads": [],
+                    "IMPORTANT": "2GIS returned no results. Do NOT invent fake leads or IDs. Stop here and tell the user the API returned nothing."
+                })
             saved_ids = []
             for biz in results:
                 lead_id = database.upsert_lead(biz)
