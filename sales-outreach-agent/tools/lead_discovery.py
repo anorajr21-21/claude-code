@@ -30,7 +30,6 @@ def _geocode_city(city: str):
 def search_businesses(city: str, category: str = "beauty_salon", radius_m: int = 5000, max_results: int = 20) -> list[dict]:
     lon, lat = _geocode_city(city)
     queries = CATEGORY_QUERIES.get(category, [category])
-    print(f"[2GIS] city={city} category={category} queries={queries} key={TWOGIS_API_KEY[:8]}...", flush=True)
 
     seen = set()
     results = []
@@ -52,7 +51,6 @@ def search_businesses(city: str, category: str = "beauty_salon", radius_m: int =
             },
             timeout=15,
         )
-        print(f"[2GIS] query={query!r} status={resp.status_code} body={resp.text[:300]}", flush=True)
         resp.raise_for_status()
         items = resp.json().get("result", {}).get("items", [])
 
@@ -63,7 +61,6 @@ def search_businesses(city: str, category: str = "beauty_salon", radius_m: int =
             seen.add(place_id)
             results.append(_normalize(item, city, category))
 
-    print(f"[2GIS] total results: {len(results)}", flush=True)
     return results[:max_results]
 
 

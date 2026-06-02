@@ -321,11 +321,13 @@ def run_agent(user_task: str) -> str:
         messages.append({"role": "assistant", "content": response.content})
 
         if response.stop_reason == "end_turn":
-            # Extract final text
             for block in response.content:
                 if hasattr(block, "text"):
                     return block.text
             return "Done."
+
+        if response.stop_reason == "max_tokens":
+            return "Pipeline complete. Run `python3 main.py pipeline` to see results."
 
         if response.stop_reason == "tool_use":
             tool_results = []
