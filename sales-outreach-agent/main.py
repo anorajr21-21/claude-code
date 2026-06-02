@@ -5,21 +5,23 @@ CLI entry point.
 """
 
 import argparse
-import sys
-import json
+import os
 import database
 from agent import run_agent
-from tools.scheduler import start_scheduler, _run_followups
 
 
 def cmd_run(args):
+    if args.dry_run:
+        os.environ["DRY_RUN"] = "true"
+        print("[DRY RUN] Messages will be printed, not sent.\n")
+
     task = args.task or (
         f"Find {args.category} businesses in {args.city}, enrich their contact details, "
         f"draft personalized outreach messages, send them via {args.channel}, "
         f"schedule follow-ups, and update the pipeline. "
         f"Start by searching for leads, then enrich each one, draft messages, and send them."
     )
-    print(f"\n🤖 Starting outreach agent...\nTask: {task}\n")
+    print(f"\nStarting outreach agent...\nTask: {task}\n")
     result = run_agent(task)
     print(f"\n{'='*60}\n{result}\n")
 
@@ -85,6 +87,7 @@ def main():
     p_run.add_argument("--category", default="restaurant", help="Business category")
     p_run.add_argument("--channel", default="whatsapp", choices=["whatsapp", "telegram"])
     p_run.add_argument("--task", help="Custom task description (overrides city/category)")
+    p_run.add_argument("--dry-run", action="store_true", help="Print messages instead of sending them")
     p_run.set_defaults(func=cmd_run)
 
     # followups
