@@ -1,88 +1,105 @@
-import googlemaps
-from config import GOOGLE_MAPS_API_KEY
+import httpx
+from config import TWOGIS_API_KEY
 
-_gmaps = None
+BASE_URL = "https://catalog.api.2gis.com/3.0/items"
+GEOCODE_URL = "https://catalog.api.2gis.com/3.0/items/geocode"
 
-
-def _client() -> googlemaps.Client:
-    global _gmaps
-    if _gmaps is None:
-        _gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
-    return _gmaps
-
-
-# Business types most relevant for Too Good To Go
-TGTG_RELEVANT_TYPES = [
-    "restaurant",
-    "cafe",
-    "bakery",
-    "meal_takeaway",
-    "food",
-    "supermarket",
-    "grocery_or_supermarket",
-    "convenience_store",
-]
+CATEGORY_QUERIES = {
+    "beauty_salon": ["салон красоты", "beauty salon", "парикмахерская", "nail salon"],
+    "car_wash": ["автомойка", "car wash", "мойка автомобилей"],
+    "barbershop": ["барбершоп", "barbershop", "мужская стрижка"],
+    "spa": ["spa", "спа", "массаж"],
+}
 
 
-def search_businesses(city: str, category: str = "restaurant", radius_m: int = 5000, max_results: int = 20) -> list[dict]:
-    """Search Google Maps for food businesses in a city not yet on Too Good To Go."""
-    gmaps = _client()
+def _geocode_city(city: str) -> tuple[float, float]:
+    resp = httpx.get(GEOCODE_URL, params={"q": city, "fields": "items.point", "key": TWOGIS_API_KEY}, timeout=10)
+    resp.raise_for_status()
+    items = resp.json().get("result", {}).get("items", [])
+    if not items:
+        raise ValueError(f"Could not geocode: {city}")
+    point = items[0]["point"]
+    return point["lon"], point["lat"]
 
-    geocode = gmaps.geocode(city)
-    if not geocode:
-        raise ValueError(f"Could not geocode city: {city}")
-    loc = geocode[0]["geometry"]["location"]
 
+def search_businesses(city: str, category: str = "beauty_salon", radius_m: int = 3000, max_results: int = 20) -> list[dict]:
+    """Search 2GIS for service businesses in a city."""
+    lon, lat = _geocode_city(city)
+    queries = CATEGORY_QUERIES.get(category, [category])
+
+    seen = set()
     results = []
-    page_token = None
 
-    while len(results) < max_results:
-        kwargs = dict(
-            location=loc,
-            radius=radius_m,
-            type=category,
-            language="es",
-        )
-        if page_token:
-            kwargs["page_token"] = page_token
-
-        resp = gmaps.places_nearby(**kwargs)
-        for place in resp.get("results", []):
-            if len(results) >= max_results:
-                break
-            results.append(_normalize(place, city, category))
-
-        page_token = resp.get("next_page_token")
-        if not page_token:
+    for query in queries:
+        if len(results) >= max_results:
             break
 
-    return results
+        params = {
+            "q": query,
+            "location": f"{lon},{lat}",
+            "radius": radius_m,
+            "key": TWOGIS_API_KEY,
+            "fields": "items.name,items.address,items.contact_groups,items.rubrics,items.point",
+            "page_size": min(max_results - len(results), 20),
+            "type": "branch",
+        }
+
+        resp = httpx.get(BASE_URL, params=params, timeout=15)
+        resp.raise_for_status()
+        items = resp.json().get("result", {}).get("items", [])
+
+        for item in items:
+            place_id = item.get("id")
+            if not place_id or place_id in seen:
+                continue
+            seen.add(place_id)
+            results.append(_normalize(item, city, category))
+
+    return results[:max_results]
 
 
 def get_place_details(place_id: str) -> dict:
-    gmaps = _client()
-    fields = [
-        "name", "formatted_address", "formatted_phone_number",
-        "international_phone_number", "website", "rating",
-        "opening_hours", "types",
-    ]
-    resp = gmaps.place(place_id=place_id, fields=fields, language="es")
-    result = resp.get("result", {})
-    return {
-        "phone": result.get("international_phone_number") or result.get("formatted_phone_number"),
-        "website": result.get("website"),
-        "opening_hours": result.get("opening_hours", {}).get("weekday_text", []),
+    """Fetch full details for a 2GIS place."""
+    params = {
+        "id": place_id,
+        "key": TWOGIS_API_KEY,
+        "fields": "items.contact_groups,items.schedule,items.address",
     }
+    resp = httpx.get(BASE_URL, params=params, timeout=10)
+    resp.raise_for_status()
+    items = resp.json().get("result", {}).get("items", [])
+    if not items:
+        return {}
+    item = items[0]
+    phone = _extract_phone(item)
+    return {"phone": phone, "website": _extract_website(item)}
 
 
-def _normalize(place: dict, city: str, category: str) -> dict:
+def _extract_phone(item: dict) -> str | None:
+    for group in item.get("contact_groups", []):
+        for contact in group.get("contacts", []):
+            if contact.get("type") == "phone":
+                return contact.get("value")
+    return None
+
+
+def _extract_website(item: dict) -> str | None:
+    for group in item.get("contact_groups", []):
+        for contact in group.get("contacts", []):
+            if contact.get("type") in ("website", "url"):
+                return contact.get("value")
+    return None
+
+
+def _normalize(item: dict, city: str, category: str) -> dict:
+    addr = item.get("address", {})
     return {
-        "place_id": place.get("place_id"),
-        "name": place.get("name"),
-        "address": place.get("vicinity"),
-        "phone": None,  # requires details call
+        "place_id": item.get("id"),
+        "name": item.get("name"),
+        "address": addr.get("name") or addr.get("building_name"),
+        "phone": _extract_phone(item),
         "category": category,
-        "rating": place.get("rating"),
-        "website": None,
+        "rating": None,
+        "website": _extract_website(item),
         "city": city,
     }

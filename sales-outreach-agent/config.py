@@ -6,7 +6,7 @@ load_dotenv()
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() in ("1", "true", "yes")
 
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
-GOOGLE_MAPS_API_KEY = os.environ["GOOGLE_MAPS_API_KEY"]
+TWOGIS_API_KEY = os.environ["TWOGIS_API_KEY"]
 
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
