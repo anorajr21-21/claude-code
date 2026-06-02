@@ -29,8 +29,8 @@ TOOLS = [
                 "city": {"type": "string", "description": "City name and country, e.g. 'Barcelona, Spain'"},
                 "category": {
                     "type": "string",
-                    "enum": ["restaurant", "cafe", "bakery", "meal_takeaway", "supermarket"],
-                    "description": "Type of food business to search for",
+                    "enum": ["beauty_salon", "car_wash", "barbershop", "spa"],
+                    "description": "Type of service business to search for",
                 },
                 "radius_m": {"type": "integer", "description": "Search radius in metres (default 5000)", "default": 5000},
                 "max_results": {"type": "integer", "description": "Max businesses to return (default 20)", "default": 20},

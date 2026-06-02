@@ -84,7 +84,7 @@ def main():
     # run
     p_run = sub.add_parser("run", help="Run outreach for a city")
     p_run.add_argument("--city", default="Tashkent, Uzbekistan", help="Target city")
-    p_run.add_argument("--category", default="restaurant", help="Business category")
+    p_run.add_argument("--category", default="beauty_salon", choices=["beauty_salon", "car_wash", "barbershop", "spa"], help="Business category")
     p_run.add_argument("--channel", default="whatsapp", choices=["whatsapp", "telegram"])
     p_run.add_argument("--task", help="Custom task description (overrides city/category)")
     p_run.add_argument("--dry-run", action="store_true", help="Print messages instead of sending them")
